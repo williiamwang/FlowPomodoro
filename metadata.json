@@ -1,0 +1,5 @@
+{
+  "name": "FlowPomodoro",
+  "description": "An aesthetic, AI-powered Pomodoro timer that helps you focus and break down complex tasks using Gemini.",
+  "requestFramePermissions": []
+}

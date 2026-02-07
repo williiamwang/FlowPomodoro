@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlowPomodoro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Inter"', '"Noto Sans SC"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+              mono: ['"SF Mono"', '"JetBrains Mono"', 'monospace'],
+            },
+            colors: {
+              morandi: {
+                base: '#F5F5F7',
+                darkBase: '#09090b',
+                text: {
+                  primary: '#1D1D1F',
+                  secondary: '#86868B',
+                  darkPrimary: '#F5F5F7',
+                  darkSecondary: '#A1A1AA',
+                },
+                work: {
+                  DEFAULT: '#E66F66',
+                  light: '#FDECEB',
+                  gradient: '#FF8F85'
+                },
+                break: {
+                  DEFAULT: '#7EB09B',
+                  light: '#EAF4F0',
+                  gradient: '#A3D9C3'
+                },
+                long: {
+                  DEFAULT: '#6B9AC4',
+                  light: '#EBF4FA',
+                  gradient: '#94C0E6'
+                }
+              }
+            },
+            boxShadow: {
+              'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+              'glass-dark': '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+              'ios-btn': '0 2px 5px rgba(0,0,0,0.1), 0 1px 1px rgba(0,0,0,0.05)',
+              'ios-float': '0 10px 20px -5px rgba(0, 0, 0, 0.1)',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      ::-webkit-scrollbar { width: 0px; background: transparent; }
+      body {
+        background-color: #F5F5F7;
+        background-image: 
+          radial-gradient(circle at 15% 50%, rgba(214, 140, 131, 0.08), transparent 25%), 
+          radial-gradient(circle at 85% 30%, rgba(136, 156, 174, 0.08), transparent 25%);
+        background-attachment: fixed;
+        transition: background-color 0.5s ease;
+      }
+      html.dark body {
+        background-color: #09090b;
+        background-image: 
+          radial-gradient(circle at 15% 50%, rgba(214, 140, 131, 0.03), transparent 25%), 
+          radial-gradient(circle at 85% 30%, rgba(136, 156, 174, 0.03), transparent 25%);
+      }
+      
+      /* 方案核心：将原生 input 变为透明图层，覆盖在模拟的标签上方 */
+      .date-input-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 10;
+        /* 强制隐藏默认浏览器样式，确保点击区域最大化 */
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      /* 针对某些浏览器，确保日历指示器也撑满 */
+      .date-input-overlay::-webkit-calendar-picker-indicator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        cursor: pointer;
+      }
+    </style>
+</head>
+  <body class="text-morandi-text-primary dark:text-morandi-text-darkPrimary antialiased selection:bg-morandi-work selection:text-white transition-colors duration-500">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
