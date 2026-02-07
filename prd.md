@@ -51,8 +51,8 @@
     - text.darkPrimary: #F5F5F7
     - text.darkSecondary: #A1A1AA
     - work.DEFAULT: #E66F66；work.light: #FDECEB；work.gradient: #FF8F85
-    - break.DEFAULT: #7EB09B；break.light: #EAF4F0；break.gradient: #A3D9C3
-    - long.DEFAULT: #6B9AC4；long.light: #EBF4FA；long.gradient: #94C0E6
+    - break.DEFAULT: #6FAF76；break.light: #E8F4EC；break.gradient: #B7E2C7
+    - long.DEFAULT: #5B88D0；long.light: #E7F1FB；long.gradient: #9FC3F0
 - 背景（index.html style）：
   - 浅色：base 背景 + 两个 radial-gradient（位置：15% 50%、85% 30%，rgba(214,140,131,0.08)、rgba(136,156,174,0.08)）
   - 深色：darkBase 背景 + 两个 radial-gradient（同位置，透明度 0.03）
@@ -86,7 +86,7 @@
   - 下方 4 个进度点：表示已完成 WORK 次数；点亮为 morandi.work 并带 glow
 - 控制按钮区：
   - Reset（14x14 圆形，灰边白底，hover morandi.work）
-  - Play/Pause（20x20 圆形，阴影 ios-float，未启动为 morandi.work，启动后为正文色）
+  - Play/Pause（20x20 圆形，阴影 ios-float，图标颜色跟随当前模式：WORK=morandi.work、SHORT_BREAK=morandi.break、LONG_BREAK=morandi.long；图标 fill 使用 currentColor）
 - 任务列表卡片：
   - 背景玻璃态（白/60 或深灰/60），圆角 2rem，阴影 glass/glass-dark
   - 内含“输入区”、“列表区”、“批量操作浮层”
@@ -99,8 +99,8 @@
   - 外层背景圈颜色：浅色 #F0F0F2，深色 gray-700/50
   - 进度圈使用线性渐变（不同模式）：
     - WORK：start #E66F66、end #FFB8B0、shadow rgba(230,111,102,0.4)
-    - SHORT_BREAK：start #7EB09B、end #B8E0D2、shadow rgba(126,176,155,0.4)
-    - LONG_BREAK：start #6B9AC4、end #A8D4F7、shadow rgba(107,154,196,0.4)
+    - SHORT_BREAK：start #6FAF76、end #CFE7DB、shadow rgba(111,175,118,0.45)
+    - LONG_BREAK：start #5B88D0、end #9FC3F0、shadow rgba(91,136,208,0.45)
   - strokeDashoffset = circumference - (timeLeft/totalTime)*circumference，过渡 0.8s cubic-bezier(0.4, 0, 0.2, 1)
 - 内部文案：
   - 时间文本：text-7xl、font-semibold、tracking-tighter

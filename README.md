@@ -58,10 +58,12 @@ npm run dev
 - 颜色（Morandi 调色）：
   - 基础：`#F5F5F7`；深色基底：`#09090b`
   - 专注：`#E66F66`（渐变 `#FFB8B0`）
-  - 短休：`#7EB09B`（渐变 `#B8E0D2`）
-  - 长休：`#6B9AC4`（渐变 `#A8D4F7`）
+  - 短休：`#6FAF76`（渐变 `#B7E2C7`）
+  - 长休：`#5B88D0`（渐变 `#9FC3F0`）
 - 阴影：glass、glass-dark、ios-btn、ios-float
 - 背景：柔和径向渐变；深浅模式平滑过渡
+- 控件配色行为：
+  - 播放/暂停图标颜色跟随当前模式（WORK/SHORT_BREAK/LONG_BREAK）
 - 键盘快捷键：
   - Ctrl+Enter：从任务输入触发 AI 拆解
   - Enter（日期输入框内）：快速添加任务
