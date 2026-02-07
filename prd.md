@@ -39,7 +39,7 @@
 
 ## 4. 视觉与品牌规范
 - 字体：
-  - Sans：Inter、Noto Sans SC；回退 -apple-system、BlinkMacSystemFont、sans-serif
+  - Sans：LXGW WenKai（霞鹜文楷）、Noto Sans SC/Source Han Sans SC、Inter；回退 -apple-system、BlinkMacSystemFont、sans-serif
   - Mono：SF Mono、JetBrains Mono
 - 主题（Tailwind 运行时配置：tailwind.config）：
   - darkMode: 'class'
@@ -83,7 +83,7 @@
   - 三个按钮：WORK/SHORT/LONG，被选中项白色圆角且阴影
 - 计时区域：
   - 圆形计时器组件（详见组件规范）
-  - 下方 4 个进度点：表示已完成 WORK 次数；点亮为 morandi.work 并带 glow
+  - 下方 3 个状态点：分别表示 WORK/SHORT_BREAK/LONG_BREAK；当前模式对应圆点点亮为 morandi.work/break/long 并带 glow
 - 控制按钮区：
   - Reset（14x14 圆形，灰边白底，hover morandi.work）
   - Play/Pause（20x20 圆形，阴影 ios-float，图标颜色跟随当前模式：WORK=morandi.work、SHORT_BREAK=morandi.break、LONG_BREAK=morandi.long；图标 fill 使用 currentColor）
@@ -114,7 +114,7 @@
   - 左侧完成按钮：未完成白底灰边；完成后绿色（使用 morandi-break）
   - 标题：未完成为正文色；完成变灰并加删除线
   - 番茄统计徽标：🍅 completedPomodoros / estimatedPomodoros（text-[10px]）
-  - 截止提醒：即将到期显示琥珀色点与“即将到期”标签
+  - 截止提醒：逾期红点 + “已逾期”标签；当天显示琥珀色点 + “即将到期”；未来日期蓝色胶囊
   - 快捷小控件（hover 透明度显现）：编辑、删除、拖拽柄
   - 选中模式：左侧圆形选择器，高亮背景 work/10
 - 选择模式浮层：底部红色删除按钮，禁用时灰色不可点
@@ -154,11 +154,13 @@
   - 数据展示：
     - 今日总结：今日已完成任务（含 🍅 completed/estimated 与完成日期）、未完成任务；均按截止日期升序
     - 今日待办：未完成待办，按截止日期升序
-  - 视觉：玻璃拟态卡片；截止徽标颜色规则（逾期红、当天琥珀、3日内浅琥珀、其余灰）
+  - 视觉：玻璃拟态卡片；截止徽标颜色规则（逾期红、当天琥珀、未来蓝）；不显示 D±N 数字
   - 本地存储键：flow_pomodoro_morning_shown、flow_pomodoro_evening_shown、flow_pomodoro_skip_morning_date、flow_pomodoro_skip_evening_date
+  - 测试参数：`?forceEvening=1` 强制今天弹出晚间总结（用于验证）
 - 任务操作：
   - 添加：Enter 提交
   - 完成切换：点击左侧圆形按钮
+  - 完成切换后的重排：任务自动移动到对应分组（已完成置顶、未完成置底）
   - 编辑：点击标题进入编辑态（标题、日期、番茄估算）
   - 拖拽排序：DndKit 竖向列表
   - 批量选择/删除：进入选择模式后可全选/反选、删除选中
@@ -198,7 +200,8 @@
 
 ## 10. 状态持久化
 - localStorage：
-  - 主题、语言、助理信息、引语缓存、计时器设置
+  - 主题、语言、助理信息、引语缓存、计时器设置、任务集合
+  - 任务集合键：`flow_pomodoro_tasks`（title/completed/dueDate/estimated/completedPomodoros/completedAt）
   - 计时器运行状态（isActive）不持久化；刷新后重置
 - 引语缓存更新：
   - 刷新时保留 isLiked=true 的项；合并新数据后截断至 20 条
@@ -239,7 +242,7 @@
 
 ## 15. 开发者附录（实现提示）
 - index.html：
-  - 引入 tailwind CDN 与字体；设置 tailwind.config（见视觉规范）与 body 背景样式
+  - 引入 tailwind CDN 与字体（含 LXGW WenKai/Noto Sans SC/Source Han Sans SC/Inter）；设置 tailwind.config（见视觉规范）与 body 背景样式
   - 设置 .date-input-overlay 用于日期控件透明覆盖
 - 组件与状态：
   - App 负责主题/语言/计时器/通知/引语缓存/任务集合等
