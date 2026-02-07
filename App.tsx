@@ -83,7 +83,23 @@ const App: React.FC = () => {
 
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [isRefreshingQuote, setIsRefreshingQuote] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    try {
+      const saved = localStorage.getItem('flow_pomodoro_tasks');
+      if (!saved) return [];
+      const list = JSON.parse(saved) as Task[];
+      if (!Array.isArray(list)) return [];
+      return list.map(t => ({
+        id: t.id,
+        title: t.title,
+        completed: !!t.completed,
+        dueDate: t.dueDate || undefined,
+        estimatedPomodoros: Number(t.estimatedPomodoros) || 1,
+        completedPomodoros: Number(t.completedPomodoros) || 0,
+        completedAt: t.completedAt
+      }));
+    } catch { return []; }
+  });
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -120,6 +136,26 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [notification, setNotification] = useState<{show: boolean, text: string, mode: TimerMode}>({ show: false, text: '', mode: TimerMode.WORK });
   const [completedWorkSessions, setCompletedWorkSessions] = useState(0);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('zen_pomodoro_settings', JSON.stringify(customTimes));
+    } catch {}
+  }, [customTimes]);
+
+  const getTodayStr = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const [showMorningModal, setShowMorningModal] = useState(false);
+  const [showEveningModal, setShowEveningModal] = useState(false);
+  const [morningShownDate, setMorningShownDate] = useState(() => localStorage.getItem('flow_pomodoro_morning_shown') || '');
+  const [eveningShownDate, setEveningShownDate] = useState(() => localStorage.getItem('flow_pomodoro_evening_shown') || '');
+  const [skipMorningToday, setSkipMorningToday] = useState(() => localStorage.getItem('flow_pomodoro_skip_morning_date') === getTodayStr());
+  const [skipEveningToday, setSkipEveningToday] = useState(() => localStorage.getItem('flow_pomodoro_skip_evening_date') === getTodayStr());
 
   const playChime = useCallback(() => {
     try {
@@ -277,10 +313,33 @@ const App: React.FC = () => {
 
   const handleTaskToggle = (id: string) => {
     setTasks(prev => {
-      const updated = prev.map(t => t.id === id ? {...t, completed: !t.completed} : t);
-      return [...updated];
+      const today = getTodayStr();
+      const updated = prev.map(t =>
+        t.id === id
+          ? (!t.completed
+              ? { ...t, completed: true, completedAt: today }
+              : { ...t, completed: false, completedAt: undefined })
+          : t
+      );
+      const toggled = updated.find(t => t.id === id);
+      if (!toggled) return [...updated];
+      const uncompleted = updated.filter(t => !t.completed && t.id !== id);
+      const completed = updated
+        .filter(t => t.completed && t.id !== id)
+        .sort((a, b) => (b.completedAt || '').localeCompare(a.completedAt || ''));
+      if (toggled.completed) {
+        return [...uncompleted, toggled, ...completed];
+      } else {
+        return [...uncompleted, toggled, ...completed];
+      }
     });
   };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('flow_pomodoro_tasks', JSON.stringify(tasks));
+    } catch {}
+  }, [tasks]);
 
   const t = {
     work: language === Language.ZH ? '专注' : 'Focus',
@@ -300,7 +359,98 @@ const App: React.FC = () => {
     return t.longBreaking;
   };
 
+  const sortByDueDate = (list: Task[]) => {
+    return [...list].sort((a, b) => {
+      if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return 0;
+    });
+  };
+
+  const daysUntil = (iso?: string) => {
+    if (!iso) return null;
+    try {
+      const [y, m, d] = iso.split('-').map(Number);
+      const due = new Date(y, m - 1, d);
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const end = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+      const diff = Math.round((end.getTime() - start.getTime()) / (24 * 3600 * 1000));
+      return diff;
+    } catch { return null; }
+  };
+
+  const getDueBadgeClass = (iso?: string) => {
+    const n = daysUntil(iso);
+    if (n === null) return 'bg-gray-200 text-gray-600';
+    if (n < 0) return 'bg-red-100 text-red-600';
+    if (n === 0) return 'bg-amber-100 text-amber-600';
+    if (n <= 3) return 'bg-amber-50 text-amber-500';
+    return 'bg-gray-100 text-gray-600';
+  };
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      const today = getTodayStr();
+      const morningAlready = morningShownDate === today;
+      const eveningAlready = eveningShownDate === today;
+      const skipM = localStorage.getItem('flow_pomodoro_skip_morning_date') === today;
+      const skipE = localStorage.getItem('flow_pomodoro_skip_evening_date') === today;
+      if (minutes >= (17 * 60 + 30) && minutes < (24 * 60)) {
+        if (!eveningAlready && !skipE) {
+          setShowEveningModal(true);
+          setEveningShownDate(today);
+          localStorage.setItem('flow_pomodoro_evening_shown', today);
+        }
+      } else {
+        if (!morningAlready && !skipM) {
+          setShowMorningModal(true);
+          setMorningShownDate(today);
+          localStorage.setItem('flow_pomodoro_morning_shown', today);
+        }
+      }
+    };
+    tick();
+    const interval = window.setInterval(tick, 30000);
+    return () => clearInterval(interval);
+  }, [morningShownDate, eveningShownDate]);
+
+  const uncompletedTasksSorted = sortByDueDate(tasks.filter(t => !t.completed));
+  const completedTodaySorted = sortByDueDate(tasks.filter(t => t.completed && t.completedAt === getTodayStr()));
+
   const currentQuote: QuoteData = quoteCache[mode][currentQuoteIndex] || quoteCache[mode][0] || { text: "", isLiked: false };
+
+  const handleSkipTodayMorning = () => {
+    const today = getTodayStr();
+    localStorage.setItem('flow_pomodoro_skip_morning_date', today);
+    setSkipMorningToday(true);
+    setShowMorningModal(false);
+  };
+
+  const handleSkipTodayEvening = () => {
+    const today = getTodayStr();
+    localStorage.setItem('flow_pomodoro_skip_evening_date', today);
+    setSkipEveningToday(true);
+    setShowEveningModal(false);
+  };
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('forceEvening') === '1') {
+        const today = getTodayStr();
+        localStorage.removeItem('flow_pomodoro_skip_evening_date');
+        localStorage.removeItem('flow_pomodoro_evening_shown');
+        setSkipEveningToday(false);
+        setEveningShownDate(today);
+        localStorage.setItem('flow_pomodoro_evening_shown', today);
+        setShowEveningModal(true);
+      }
+    } catch {}
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-12 pb-12 px-4 transition-colors duration-500 dark:bg-morandi-darkBase">
@@ -370,8 +520,19 @@ const App: React.FC = () => {
       </div>
 
       <div className="flex gap-2 mb-8">
-          {[1, 2, 3, 4].map((dot) => (
-            <div key={dot} className={`h-2.5 w-2.5 rounded-full transition-all duration-500 ${dot <= completedWorkSessions ? 'bg-morandi-work shadow-[0_0_8px_rgba(230,111,102,0.5)] scale-110' : 'bg-gray-300 dark:bg-gray-700'}`}></div>
+          {[TimerMode.WORK, TimerMode.SHORT_BREAK, TimerMode.LONG_BREAK].map((m) => (
+            <div 
+              key={m} 
+              className={`h-2.5 w-2.5 rounded-full transition-all duration-500 ${
+                mode === m 
+                  ? (m === TimerMode.WORK 
+                      ? 'bg-morandi-work shadow-[0_0_8px_rgba(230,111,102,0.5)] scale-110' 
+                      : m === TimerMode.SHORT_BREAK 
+                        ? 'bg-morandi-break shadow-[0_0_8px_rgba(111,175,118,0.5)] scale-110' 
+                        : 'bg-morandi-long shadow-[0_0_8px_rgba(91,136,208,0.5)] scale-110')
+                  : 'bg-gray-300 dark:bg-gray-700'
+              }`}
+            ></div>
           ))}
       </div>
 
@@ -402,6 +563,94 @@ const App: React.FC = () => {
           setIsSettingsOpen(false); 
         }} 
       />
+
+      {showMorningModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-[640px] max-w-[92vw] p-6 rounded-3xl bg-white/85 dark:bg-gray-800/85 border border-white/20 dark:border-gray-700 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-morandi-text-primary dark:text-white">今日未完成待办（按截止日期）</h2>
+              <button onClick={() => setShowMorningModal(false)} className="text-gray-400 hover:text-morandi-work">✕</button>
+            </div>
+            <div className="space-y-2 max-h-[52vh] overflow-auto">
+              {uncompletedTasksSorted.length === 0 ? (
+                <div className="text-center text-gray-500 py-6">暂无未完成任务</div>
+              ) : (
+                uncompletedTasksSorted.map(row => (
+                  <div key={row.id} className="flex items-center justify-between bg-white/70 dark:bg-gray-700/40 rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-2.5 w-2.5 rounded-full bg-morandi-work"></div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-morandi-text-primary dark:text-white">{row.title}</span>
+                        <span className="text-[11px] text-gray-500">🍅 {row.completedPomodoros}/{row.estimatedPomodoros}</span>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs ${getDueBadgeClass(row.dueDate)}`}>{row.dueDate || '未设置'}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <input type="checkbox" checked={skipMorningToday} onChange={handleSkipTodayMorning} />
+                今天不再显示
+              </label>
+              <button className="px-4 py-2 rounded-full bg-morandi-work text-white" onClick={() => setShowMorningModal(false)}>知道了</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEveningModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-[720px] max-w-[94vw] p-6 rounded-3xl bg-white/85 dark:bg-gray-800/85 border border-white/20 dark:border-gray-700 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-morandi-text-primary dark:text-white">今日总结（17:30）</h2>
+              <button onClick={() => setShowEveningModal(false)} className="text-gray-400 hover:text-morandi-work">✕</button>
+            </div>
+            <div className="space-y-6 max-h-[58vh] overflow-auto">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">今日已完成</h3>
+                {completedTodaySorted.length === 0 ? (
+                  <div className="text-gray-500 text-sm">今天还没有完成的任务</div>
+                ) : (
+                  completedTodaySorted.map(row => (
+                    <div key={row.id} className="flex items-center justify-between bg-white/70 dark:bg-gray-700/40 rounded-2xl px-4 py-3 mb-2">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-morandi-text-primary dark:text-white">{row.title}</span>
+                        <span className="text-[11px] text-gray-500">🍅 {row.completedPomodoros}/{row.estimatedPomodoros}（完成于 {row.completedAt}）</span>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs ${getDueBadgeClass(row.dueDate)}`}>{row.dueDate || '未设置'}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">未完成</h3>
+                {uncompletedTasksSorted.length === 0 ? (
+                  <div className="text-gray-500 text-sm">暂无未完成任务</div>
+                ) : (
+                  uncompletedTasksSorted.map(row => (
+                    <div key={row.id} className="flex items-center justify-between bg-white/70 dark:bg-gray-700/40 rounded-2xl px-4 py-3 mb-2">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-morandi-text-primary dark:text-white">{row.title}</span>
+                        <span className="text-[11px] text-gray-500">🍅 {row.completedPomodoros}/{row.estimatedPomodoros}</span>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs ${getDueBadgeClass(row.dueDate)}`}>{row.dueDate || '未设置'}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <input type="checkbox" checked={skipEveningToday} onChange={handleSkipTodayEvening} />
+                今天不再显示
+              </label>
+              <button className="px-4 py-2 rounded-full bg-morandi-work text-white" onClick={() => setShowEveningModal(false)}>知道了</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
