@@ -28,8 +28,8 @@ const CircularTimer: React.FC<CircularTimerProps> = ({ timeLeft, totalTime, mode
   const getGradientColors = () => {
     switch (mode) {
       case TimerMode.WORK: return { start: '#E66F66', end: '#FFB8B0', shadow: 'rgba(230, 111, 102, 0.4)' };
-      case TimerMode.SHORT_BREAK: return { start: '#7EB09B', end: '#B8E0D2', shadow: 'rgba(126, 176, 155, 0.4)' };
-      case TimerMode.LONG_BREAK: return { start: '#6B9AC4', end: '#A8D4F7', shadow: 'rgba(107, 154, 196, 0.4)' };
+      case TimerMode.SHORT_BREAK: return { start: '#6FAF76', end: '#CFE7DB', shadow: 'rgba(111, 175, 118, 0.45)' };
+      case TimerMode.LONG_BREAK: return { start: '#5B88D0', end: '#9FC3F0', shadow: 'rgba(91, 136, 208, 0.45)' };
       default: return { start: '#9CA3AF', end: '#D1D5DB', shadow: 'rgba(156, 163, 175, 0.2)' };
     }
   };

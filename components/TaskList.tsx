@@ -90,20 +90,28 @@ const SortableTaskItem: React.FC<SortableTaskItemProps> = ({
     position: 'relative' as const,
   };
 
+  const getTodayLocalISO = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const isToday = (dateStr: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocalISO();
     return dateStr === today;
   };
 
   const isPast = (dateStr: string) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocalISO();
     return dateStr < today;
   };
 
   const isDueSoon = (dateStr: string) => {
     if (task.completed) return false;
-    const today = new Date().toISOString().split('T')[0];
-    return dateStr <= today;
+    const today = getTodayLocalISO();
+    return dateStr === today;
   };
 
   const formatDate = (dateStr?: string) => {
@@ -119,6 +127,7 @@ const SortableTaskItem: React.FC<SortableTaskItemProps> = ({
     dueDate: language === Language.ZH ? '截止日期' : 'Due Date',
     none: language === Language.ZH ? '未设置' : 'None',
     dueSoon: language === Language.ZH ? '即将到期' : 'Due Soon',
+    overdue: language === Language.ZH ? '已逾期' : 'Overdue',
     pomoEstimate: language === Language.ZH ? '预计番茄钟' : 'Estimate',
   };
 
@@ -209,49 +218,56 @@ const SortableTaskItem: React.FC<SortableTaskItemProps> = ({
           </div>
         ) : (
           <div className="flex flex-col min-w-0 flex-1 cursor-text" onClick={handleTitleClick}>
-            <div className="flex items-center gap-2">
-                <span className={`truncate select-none text-base transition-all duration-300 ${task.completed ? 'text-gray-400 dark:text-gray-600 line-through' : 'text-morandi-text-primary dark:text-gray-200 font-medium'} ${isActive && !isSelectionMode ? 'font-semibold' : ''}`}>{task.title}</span>
-                <span className="text-[10px] text-morandi-text-secondary dark:text-gray-500 font-bold bg-gray-100/50 dark:bg-gray-800/50 px-1.5 py-0.5 rounded-md flex items-center gap-1">
-                    <span className="text-morandi-work">🍅</span> {task.completedPomodoros} / {task.estimatedPomodoros}
+            <div className="flex items-center gap-2 flex-wrap">
+                <span className={`truncate flex-1 select-none text-base transition-all duration-300 ${task.completed ? 'text-gray-400 dark:text-gray-600 line-through' : 'text-morandi-text-primary dark:text-gray-200 font-medium'} ${isActive && !isSelectionMode ? 'font-semibold' : ''}`}>{task.title}</span>
+                <span className="ml-auto flex text-[10px] text-morandi-text-secondary dark:text-gray-500 font-bold bg-gray-100/50 dark:bg-gray-800/50 px-2 py-0.5 rounded-md items-center gap-1 flex-none">
+                    <span className="text-morandi-work">🍅</span>
+                    <span className="min-w-[4ch] text-center">{task.completedPomodoros} / {task.estimatedPomodoros}</span>
                 </span>
+                <div className="relative group/badge ml-1 flex-none">
+                  <input 
+                    type="date" 
+                    value={task.dueDate || ''} 
+                    onChange={(e) => onQuickDateUpdate(task.id, e.target.value)} 
+                    className="date-input-overlay"
+                  />
+                  {task.dueDate ? (
+                    <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                      task.completed 
+                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-300 border-transparent opacity-50' 
+                        : isToday(task.dueDate) || isPast(task.dueDate)
+                        ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200/30'
+                        : 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 border-blue-200/30'
+                    }`}>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      {formatDate(task.dueDate)}
+                    </div>
+                  ) : (
+                    <div className="p-2 text-gray-300 hover:text-morandi-work cursor-pointer">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    </div>
+                  )}
+                </div>
             </div>
-            {task.dueDate && isDueSoon(task.dueDate) && (
-              <div className="flex items-center gap-1 mt-0.5 animate-pulse">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tighter">{t.dueSoon}</span>
-              </div>
+            {task.dueDate && !task.completed && (
+              isPast(task.dueDate) ? (
+                <div className="flex items-center gap-1 mt-0.5 animate-pulse">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                  <span className="text-[9px] font-bold text-red-600 dark:text-red-400 uppercase tracking-tighter">{t.overdue}</span>
+                </div>
+              ) : isDueSoon(task.dueDate) ? (
+                <div className="flex items-center gap-1 mt-0.5 animate-pulse">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                  <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tighter">{t.dueSoon}</span>
+                </div>
+              ) : null
             )}
           </div>
         )}
       </div>
 
       <div className="flex items-center gap-3">
-        {!isEditing && (
-          <div className="relative group/badge">
-             <input 
-              type="date" 
-              value={task.dueDate || ''} 
-              onChange={(e) => onQuickDateUpdate(task.id, e.target.value)} 
-              className="date-input-overlay"
-            />
-            {task.dueDate ? (
-              <div className={`hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer hover:scale-105 active:scale-95 ${
-                task.completed 
-                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-300 border-transparent opacity-50' 
-                  : isToday(task.dueDate) || isPast(task.dueDate)
-                  ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200/30'
-                  : 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 border-blue-200/30'
-              }`}>
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                {formatDate(task.dueDate)}
-              </div>
-            ) : (
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-300 hover:text-morandi-work cursor-pointer">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              </div>
-            )}
-          </div>
-        )}
+        {!isEditing && <></>}
 
         {!isSelectionMode && (
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

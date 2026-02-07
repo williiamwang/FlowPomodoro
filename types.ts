@@ -17,6 +17,7 @@ export interface Task {
   dueDate?: string; // ISO string for date
   estimatedPomodoros: number;
   completedPomodoros: number;
+  completedAt?: string;
 }
 
 export interface TaskBreakdownResponse {
