@@ -148,6 +148,14 @@
 - 完成提示：
   - 顶部弹出通知卡（8s 自动消隐），显示提醒文案
   - 同时使用 SpeechSynthesis 朗读（依据语言、assistantName、assistantRole 拼接）
+- 每日提醒弹窗：
+  - 时间规则：17:30–24:00 仅显示“今日总结”弹窗；其他时间段仅显示“今日待办”弹窗
+  - 展示约束：同一天各自仅展示一次；均支持“今天不再显示”
+  - 数据展示：
+    - 今日总结：今日已完成任务（含 🍅 completed/estimated 与完成日期）、未完成任务；均按截止日期升序
+    - 今日待办：未完成待办，按截止日期升序
+  - 视觉：玻璃拟态卡片；截止徽标颜色规则（逾期红、当天琥珀、3日内浅琥珀、其余灰）
+  - 本地存储键：flow_pomodoro_morning_shown、flow_pomodoro_evening_shown、flow_pomodoro_skip_morning_date、flow_pomodoro_skip_evening_date
 - 任务操作：
   - 添加：Enter 提交
   - 完成切换：点击左侧圆形按钮
